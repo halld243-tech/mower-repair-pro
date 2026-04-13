@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id           Int         @id @default(autoincrement())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         String      @default("CUSTOMER")
+  phone        String?
+  address      String?
+  createdAt    DateTime    @default(now())
+  mowers       Mower[]
+  repairJobs   RepairJob[]
+  invoices     Invoice[]
+}
+
+model Mower {
+  id           Int         @id @default(autoincrement())
+  customerId   Int
+  customer     User        @relation(fields: [customerId], references: [id])
+  make         String
+  model        String
+  year         Int?
+  serialNumber String?
+  notes        String?
+  createdAt    DateTime    @default(now())
+  repairJobs   RepairJob[]
+}
+
+model RepairJob {
+  id          Int       @id @default(autoincrement())
+  mowerId     Int
+  mower       Mower     @relation(fields: [mowerId], references: [id])
+  customerId  Int
+  customer    User      @relation(fields: [customerId], references: [id])
+  status      String    @default("SUBMITTED")
+  description String
+  techNotes   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+  parts       Part[]
+  invoice     Invoice?
+}
+
+model Part {
+  id               Int       @id @default(autoincrement())
+  repairJobId      Int
+  repairJob        RepairJob @relation(fields: [repairJobId], references: [id])
+  name             String
+  partNumber       String?
+  supplier         String?
+  quantityOrdered  Int       @default(1)
+  quantityReceived Int       @default(0)
+  unitCost         Float     @default(0)
+  status           String    @default("ORDERED")
+  orderedAt        DateTime  @default(now())
+  receivedAt       DateTime?
+}
+
+model Invoice {
+  id          Int       @id @default(autoincrement())
+  repairJobId Int       @unique
+  repairJob   RepairJob @relation(fields: [repairJobId], references: [id])
+  customerId  Int
+  customer    User      @relation(fields: [customerId], references: [id])
+  laborCost   Float     @default(0)
+  partsCost   Float     @default(0)
+  totalCost   Float     @default(0)
+  status      String    @default("DRAFT")
+  issuedAt    DateTime  @default(now())
+  paidAt      DateTime?
+  notes       String?
+}
