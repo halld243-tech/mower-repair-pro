@@ -142,7 +142,7 @@ function BookingForm() {
 
         {submitted && (
           <div className="form-message success">
-            Appointment confirmed! We'll send you a confirmation email shortly.
+            Appointment confirmed! We&apos;ll send you a confirmation email shortly.
           </div>
         )}
 

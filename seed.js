@@ -1,8 +1,9 @@
-const { PrismaClient } = require("@prisma/client");
-
-const prisma = new PrismaClient();
+let prisma;
 
 async function main() {
+  const { PrismaClient } = await import("@prisma/client");
+  prisma = new PrismaClient();
+
   // Create category
   const category = await prisma.serviceCategory.create({
     data: {

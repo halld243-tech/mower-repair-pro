@@ -78,7 +78,7 @@ export default function ContactPage() {
 
             {submitted && (
               <div className="form-message success">
-                Thank you! We've received your message and will get back to you soon.
+                Thank you! We&apos;ve received your message and will get back to you soon.
               </div>
             )}
 

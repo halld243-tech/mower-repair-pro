@@ -66,13 +66,15 @@ export function validateName(name: string): boolean {
   return name.length > 0 && name.length <= 100 && /^[a-zA-Z\s\-']{1,100}$/.test(name);
 }
 
-export function validatePrice(price: any): boolean {
-  const parsed = parseFloat(price);
+export function validatePrice(price: unknown): boolean {
+  if (typeof price !== "number" && typeof price !== "string") return false;
+  const parsed = parseFloat(String(price));
   return !isNaN(parsed) && parsed > 0 && parsed < 10000;
 }
 
-export function validateDuration(duration: any): boolean {
-  const parsed = parseInt(duration);
+export function validateDuration(duration: unknown): boolean {
+  if (typeof duration !== "number" && typeof duration !== "string") return false;
+  const parsed = parseInt(String(duration));
   return !isNaN(parsed) && parsed > 0 && parsed <= 480; // Max 8 hours
 }
 
@@ -84,7 +86,7 @@ export function sanitizeString(input: string): string {
     .substring(0, 500); // Max 500 chars
 }
 
-export function validateRequired(fields: Record<string, any>): string | null {
+export function validateRequired(fields: Record<string, unknown>): string | null {
   for (const [key, value] of Object.entries(fields)) {
     if (!value || (typeof value === "string" && !value.trim())) {
       return `${key} is required`;
@@ -100,7 +102,7 @@ export function validateRequired(fields: Record<string, any>): string | null {
 export function logSecurityEvent(
   event: string,
   severity: "INFO" | "WARNING" | "ERROR" | "CRITICAL",
-  details: Record<string, any>
+  details: Record<string, unknown>
 ): void {
   const timestamp = new Date().toISOString();
   console.log(JSON.stringify({
@@ -114,7 +116,7 @@ export function logSecurityEvent(
 export function createErrorResponse(
   message: string,
   statusCode: number = 400,
-  logDetails?: Record<string, any>
+  logDetails?: Record<string, unknown>
 ): NextResponse {
   if (logDetails) {
     logSecurityEvent("API_ERROR", "WARNING", { message, statusCode, ...logDetails });
