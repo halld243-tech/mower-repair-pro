@@ -79,6 +79,10 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(service, { status: 201 });
     return addSecurityHeaders(response);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return createErrorResponse("Invalid JSON body", 400);
+    }
+
     logSecurityEvent("SERVICE_ERROR", "ERROR", { error: String(error) });
     return createErrorResponse("Failed to create service", 500);
   }

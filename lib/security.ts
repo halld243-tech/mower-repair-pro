@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // SECURITY MIDDLEWARE - OWASP A01: Authentication/Authorization
 // ============================================================================
 
-const API_KEY = process.env.API_KEY || "dev-key-change-in-production";
+const API_KEY = process.env.API_KEY;
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX_REQUESTS = 100;
 
@@ -12,13 +12,8 @@ const RATE_LIMIT_MAX_REQUESTS = 100;
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 export function authenticateRequest(request: NextRequest): boolean {
-  // Skip auth in development
-  if (process.env.NODE_ENV === "development") {
-    return true;
-  }
-
   const apiKey = request.headers.get("x-api-key");
-  return apiKey === API_KEY;
+  return Boolean(API_KEY) && apiKey === API_KEY;
 }
 
 export function checkRateLimit(clientId: string): boolean {

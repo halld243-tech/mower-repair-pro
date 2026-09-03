@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 interface ServiceCardProps {
   id: string;
   name: string;
@@ -18,10 +20,13 @@ export default function ServiceCard({
   return (
     <article className="catalog-card">
       {image && (
-        <img
+        <Image
           src={image}
           alt={name}
           className="catalog-image"
+          width={800}
+          height={400}
+          unoptimized
         />
       )}
       <div className="catalog-content">
