@@ -166,6 +166,7 @@ function BookingForm() {
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
           dateTime,
+          holdToken,
         }),
       });
 
