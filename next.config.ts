@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+const scriptSources = ["'self'", "'unsafe-inline'"];
+if (process.env.NODE_ENV === "development") scriptSources.push("'unsafe-eval'");
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -11,7 +14,7 @@ const nextConfig: NextConfig = {
           { key: "X-XSS-Protection", value: "1; mode=block" },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;",
+            value: `default-src 'self'; script-src ${scriptSources.join(" ")}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;`,
           },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
