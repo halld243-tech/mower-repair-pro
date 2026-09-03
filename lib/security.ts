@@ -46,14 +46,13 @@ export function getClientId(request: NextRequest): string {
 // ============================================================================
 
 export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email) && email.length <= 254;
+  const emailRegex = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
+  return email.length <= 254 && emailRegex.test(email);
 }
 
 export function validatePhone(phone: string): boolean {
-  // Accept international format with + or 10+ digits
-  const phoneRegex = /^(\+)?[1-9]\d{1,14}$/;
-  return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ""));
+  const normalizedPhone = phone.replace(/[\s\-().]/g, "");
+  return /^(\+)?[1-9]\d{9,14}$/.test(normalizedPhone);
 }
 
 export function validateName(name: string): boolean {

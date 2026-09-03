@@ -99,6 +99,8 @@ export default function ContactPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  minLength={2}
+                  maxLength={100}
                   className="field"
                 />
               </div>
@@ -113,6 +115,7 @@ export default function ContactPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  maxLength={254}
                   className="field"
                 />
               </div>
@@ -127,6 +130,8 @@ export default function ContactPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   required
+                  pattern="[+]?[0-9() .-]{10,20}"
+                  title="Enter a phone number with at least 10 digits"
                   className="field"
                 />
               </div>
@@ -140,6 +145,8 @@ export default function ContactPage() {
                   value={formData.message}
                   onChange={handleChange}
                   required
+                  minLength={10}
+                  maxLength={2000}
                   rows={5}
                   className="field"
                 />

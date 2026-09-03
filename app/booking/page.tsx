@@ -312,6 +312,8 @@ function BookingForm() {
               value={formData.customerName}
               onChange={handleFormChange}
               required
+              minLength={2}
+              maxLength={100}
               className="field"
             />
           </div>
@@ -326,6 +328,7 @@ function BookingForm() {
               value={formData.customerEmail}
               onChange={handleFormChange}
               required
+              maxLength={254}
               className="field"
             />
           </div>
@@ -340,6 +343,8 @@ function BookingForm() {
               value={formData.customerPhone}
               onChange={handleFormChange}
               required
+              pattern="[+]?[0-9() .-]{10,20}"
+              title="Enter a phone number with at least 10 digits"
               className="field"
             />
           </div>
