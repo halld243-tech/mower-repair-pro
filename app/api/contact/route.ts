@@ -77,6 +77,10 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(inquiry, { status: 201 });
     return addSecurityHeaders(response);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return createErrorResponse("Invalid JSON body", 400);
+    }
+
     logSecurityEvent("INQUIRY_ERROR", "ERROR", { error: String(error) });
     return createErrorResponse("Failed to submit inquiry", 500);
   }

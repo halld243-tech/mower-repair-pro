@@ -8,13 +8,12 @@ const CLOSED_DAYS = [0, 6]; // 0 = Sunday, 6 = Saturday
 /**
  * Get available time slots for a given date
  * @param date - The date to check availability for
- * @param serviceId - The service ID to check appointments for
- * @param existingAppointments - Array of existing appointment times
+ * @param existingAppointments - Existing appointment times and durations
  * @returns Array of available time slots
  */
 export function getAvailableSlots(
   date: Date,
-  existingAppointments: Date[] = [],
+  existingAppointments: Array<{ dateTime: Date; duration: number }> = [],
   appointmentDurationMinutes: number = SLOT_DURATION_MINUTES
 ) {
   const dayOfWeek = date.getDay();
@@ -40,9 +39,11 @@ export function getAvailableSlots(
       }
 
       // Check if slot conflicts with existing appointments
-      const hasConflict = existingAppointments.some((apt) => {
-        const appointmentEndTime = new Date(apt.getTime() + appointmentDurationMinutes * 60 * 1000);
-        return slotDateTime < appointmentEndTime && slotEndTime > apt;
+      const hasConflict = existingAppointments.some((appointment) => {
+        const appointmentEndTime = new Date(
+          appointment.dateTime.getTime() + appointment.duration * 60 * 1000
+        );
+        return slotDateTime < appointmentEndTime && slotEndTime > appointment.dateTime;
       });
 
       if (!hasConflict) {

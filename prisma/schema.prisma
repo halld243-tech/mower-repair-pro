@@ -28,6 +28,7 @@ model Service {
   categoryId  String
   image       String?  // URL to service image
   appointments Appointment[]
+  holds       AppointmentHold[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -49,6 +50,20 @@ model Appointment {
   @@index([serviceId])
   @@index([customerId])
   @@index([dateTime])
+  @@unique([dateTime])
+}
+
+model AppointmentHold {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId String
+  dateTime  DateTime
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([dateTime])
+  @@index([expiresAt])
 }
 
 model Customer {

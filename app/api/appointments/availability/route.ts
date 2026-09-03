@@ -42,22 +42,30 @@ export async function GET(request: NextRequest) {
     const endOfDay = new Date(selectedDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        serviceId,
-        dateTime: {
-          gte: startOfDay,
-          lte: endOfDay,
+    const now = new Date();
+    await prisma.appointmentHold.deleteMany({ where: { expiresAt: { lte: now } } });
+    const [appointments, holds] = await Promise.all([
+      prisma.appointment.findMany({
+        where: {
+          dateTime: { gte: startOfDay, lte: endOfDay },
+          status: { in: ["confirmed", "rescheduled"] },
         },
-        status: {
-          in: ["confirmed", "rescheduled"],
-        },
-      },
-      select: { dateTime: true },
-    });
+        select: { dateTime: true, service: { select: { duration: true } } },
+      }),
+      prisma.appointmentHold.findMany({
+        where: { dateTime: { gte: startOfDay, lte: endOfDay }, expiresAt: { gt: now } },
+        select: { dateTime: true, service: { select: { duration: true } } },
+      }),
+    ]);
 
-    const existingTimes = appointments.map((apt) => apt.dateTime);
-    const availableSlots = getAvailableSlots(selectedDate, existingTimes, service.duration);
+    const availableSlots = getAvailableSlots(
+      selectedDate,
+      [...appointments, ...holds].map((appointment) => ({
+        dateTime: appointment.dateTime,
+        duration: appointment.service.duration,
+      })),
+      service.duration
+    );
 
     logSecurityEvent("AVAILABILITY_CHECKED", "INFO", { serviceId });
     

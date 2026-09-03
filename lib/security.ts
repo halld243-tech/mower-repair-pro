@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // SECURITY MIDDLEWARE - OWASP A01: Authentication/Authorization
 // ============================================================================
 
-const API_KEY = process.env.API_KEY || "dev-key-change-in-production";
+const API_KEY = process.env.API_KEY;
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX_REQUESTS = 100;
 
@@ -12,13 +12,8 @@ const RATE_LIMIT_MAX_REQUESTS = 100;
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 export function authenticateRequest(request: NextRequest): boolean {
-  // Skip auth in development
-  if (process.env.NODE_ENV === "development") {
-    return true;
-  }
-
   const apiKey = request.headers.get("x-api-key");
-  return apiKey === API_KEY;
+  return Boolean(API_KEY) && apiKey === API_KEY;
 }
 
 export function checkRateLimit(clientId: string): boolean {
@@ -51,14 +46,13 @@ export function getClientId(request: NextRequest): string {
 // ============================================================================
 
 export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email) && email.length <= 254;
+  const emailRegex = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
+  return email.length <= 254 && emailRegex.test(email);
 }
 
 export function validatePhone(phone: string): boolean {
-  // Accept international format with + or 10+ digits
-  const phoneRegex = /^(\+)?[1-9]\d{1,14}$/;
-  return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ""));
+  const normalizedPhone = phone.replace(/[\s\-().]/g, "");
+  return /^(\+)?[1-9]\d{9,14}$/.test(normalizedPhone);
 }
 
 export function validateName(name: string): boolean {

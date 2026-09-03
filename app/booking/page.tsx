@@ -28,6 +28,10 @@ function BookingForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [slotsLoading, setSlotsLoading] = useState(false);
+  const [holdToken, setHoldToken] = useState("");
+  const [holdExpiresAt, setHoldExpiresAt] = useState("");
+  const [holdSeconds, setHoldSeconds] = useState(0);
+  const [holdLoading, setHoldLoading] = useState(false);
 
   // Fetch services
   useEffect(() => {
@@ -76,6 +80,64 @@ function BookingForm() {
     fetchSlots();
   }, [selectedService, selectedDate]);
 
+  useEffect(() => {
+    if (!holdExpiresAt) return;
+
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.ceil((new Date(holdExpiresAt).getTime() - Date.now()) / 1000));
+      setHoldSeconds(remaining);
+      if (remaining === 0) {
+        setHoldToken("");
+        setHoldExpiresAt("");
+        setSelectedTime("");
+        setError("Your time hold expired. Please select another time.");
+      }
+    };
+
+    updateCountdown();
+    const interval = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(interval);
+  }, [holdExpiresAt]);
+
+  const releaseHold = async (token = holdToken) => {
+    if (!token) return;
+    await fetch("/api/appointments/hold", {
+      method: "DELETE",
+      headers: { "x-hold-token": token },
+    });
+  };
+
+  const handleTimeChange = async (value: string) => {
+    const previousHoldToken = holdToken;
+    setSelectedTime(value);
+    setError("");
+    setHoldToken("");
+    setHoldExpiresAt("");
+    if (previousHoldToken) await releaseHold(previousHoldToken);
+    if (!value || !selectedService || !selectedDate) return;
+
+    setHoldLoading(true);
+    try {
+      const response = await fetch("/api/appointments/hold", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceId: selectedService.id,
+          dateTime: `${selectedDate}T${value}:00`,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "That time is no longer available");
+      setHoldToken(data.holdToken);
+      setHoldExpiresAt(data.expiresAt);
+    } catch (err) {
+      setSelectedTime("");
+      setError(err instanceof Error ? err.message : "That time is no longer available");
+    } finally {
+      setHoldLoading(false);
+    }
+  };
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -86,7 +148,7 @@ function BookingForm() {
     setLoading(true);
     setError("");
 
-    if (!selectedService || !selectedDate || !selectedTime) {
+    if (!selectedService || !selectedDate || !selectedTime || !holdToken) {
       setError("Please select a service, date, and time");
       setLoading(false);
       return;
@@ -104,18 +166,20 @@ function BookingForm() {
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
           dateTime,
+          holdToken,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create appointment");
-      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to create appointment");
 
       setSubmitted(true);
       setFormData({ customerName: "", customerEmail: "", customerPhone: "" });
       setSelectedService(null);
       setSelectedDate("");
       setSelectedTime("");
+      setHoldToken("");
+      setHoldExpiresAt("");
 
       // Reset success message after 5 seconds
       setTimeout(() => setSubmitted(false), 5000);
@@ -161,8 +225,12 @@ function BookingForm() {
             <select
               value={selectedService?.id || ""}
               onChange={(e) => {
+                if (holdToken) void releaseHold();
                 const service = services.find((s) => s.id === e.target.value);
                 setSelectedService(service || null);
+                setSelectedTime("");
+                setHoldToken("");
+                setHoldExpiresAt("");
               }}
               required
               className="field"
@@ -184,7 +252,13 @@ function BookingForm() {
             <input
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={(e) => {
+                if (holdToken) void releaseHold();
+                setSelectedDate(e.target.value);
+                setSelectedTime("");
+                setHoldToken("");
+                setHoldExpiresAt("");
+              }}
               min={today}
               required
               className="field"
@@ -206,7 +280,7 @@ function BookingForm() {
               ) : (
                 <select
                   value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
+                  onChange={(e) => void handleTimeChange(e.target.value)}
                   required
                   className="field"
                 >
@@ -217,6 +291,12 @@ function BookingForm() {
                     </option>
                   ))}
                 </select>
+              )}
+              {holdLoading && <p className="field-note">Holding this time...</p>}
+              {holdToken && holdSeconds > 0 && (
+                <p className="field-note">
+                  Held for {Math.floor(holdSeconds / 60)}:{String(holdSeconds % 60).padStart(2, "0")}
+                </p>
               )}
             </div>
           )}
@@ -232,6 +312,8 @@ function BookingForm() {
               value={formData.customerName}
               onChange={handleFormChange}
               required
+              minLength={2}
+              maxLength={100}
               className="field"
             />
           </div>
@@ -246,6 +328,7 @@ function BookingForm() {
               value={formData.customerEmail}
               onChange={handleFormChange}
               required
+              maxLength={254}
               className="field"
             />
           </div>
@@ -260,6 +343,8 @@ function BookingForm() {
               value={formData.customerPhone}
               onChange={handleFormChange}
               required
+              pattern="[+]?[0-9() .-]{10,20}"
+              title="Enter a phone number with at least 10 digits"
               className="field"
             />
           </div>
